@@ -19,7 +19,25 @@ from dotenv import load_dotenv
 from hook_generator import add_hook_to_clip
 
 load_dotenv(Path(__file__).parent.parent / ".env")
-client = OpenAI(api_key=os.getenv("OPENAI_APIKEY"))
+
+# Check if using Azure OpenAI
+azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+azure_key = os.getenv("AZURE_OPENAI_API_KEY")
+azure_api_version = os.getenv("AZURE_OPENAI_API_VERSION")
+chat_deployment = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT")
+tts_deployment = os.getenv("AZURE_OPENAI_TTS_DEPLOYMENT")
+
+if azure_endpoint and azure_key:
+    client = OpenAI(
+        api_key=azure_key,
+        base_url=f"{azure_endpoint.rstrip('/')}/openai/v1"
+    )
+    chat_model = chat_deployment or "gpt-4"
+    tts_model = tts_deployment or "tts"
+else:
+    client = OpenAI(api_key=os.getenv("OPENAI_APIKEY"))
+    chat_model = "gpt-4.1"
+    tts_model = "tts-1"
 
 
 def download_video(url: str, output_dir: str) -> tuple[str, str, dict]:
@@ -30,7 +48,8 @@ def download_video(url: str, output_dir: str) -> tuple[str, str, dict]:
     # First, get video metadata (title, description, channel)
     print("  Fetching video info...")
     meta_cmd = [
-        "yt-dlp",
+        sys.executable,
+        "-m", "yt_dlp",
         "--dump-json",
         "--no-download",
         url
@@ -55,7 +74,8 @@ def download_video(url: str, output_dir: str) -> tuple[str, str, dict]:
     # Download video + subtitle
     print("  Downloading video...")
     cmd = [
-        "yt-dlp",
+        sys.executable,
+        "-m", "yt_dlp",
         "-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]",
         "--write-sub", "--write-auto-sub",
         "--sub-lang", "id",
@@ -531,7 +551,7 @@ PENTING:
 - Return HANYA JSON array, tanpa text lain"""
 
     response = client.chat.completions.create(
-        model="gpt-4.1",
+        model=chat_model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
     )
@@ -576,7 +596,7 @@ Return JSON format:
 {{"title": "...", "description": "..."}}"""
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=chat_model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
     )
@@ -589,7 +609,7 @@ Return JSON format:
     return json.loads(result)
 
 
-def clip_video(video_path: str, highlights: list, output_base: str):
+def clip_video(video_path: str, highlights: list, output_base: str, url: str = ""):
     """Clip video, convert to portrait, add hook, and add captions"""
     print("\n[3/5] CLIPPING VIDEO")
     print("-" * 50)
@@ -671,6 +691,7 @@ def clip_video(video_path: str, highlights: list, output_base: str):
         metadata["end_time"] = h["end_time"]
         metadata["duration_seconds"] = h["duration_seconds"]
         metadata["hook_added"] = hook_duration > 0
+        metadata["source_url"] = url
         
         # Save data.json
         data_file = f"{clip_dir}/data.json"
@@ -730,7 +751,7 @@ def main():
         sys.exit(1)
     
     # Step 3: Clip videos
-    clip_video(video_path, highlights, output_base)
+    clip_video(video_path, highlights, output_base, url)
     
     print("\n[4/4] DONE!")
     print("-" * 50)

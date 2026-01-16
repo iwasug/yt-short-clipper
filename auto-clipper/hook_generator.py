@@ -14,7 +14,25 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 load_dotenv(Path(__file__).parent.parent / ".env")
-client = OpenAI(api_key=os.getenv("OPENAI_APIKEY"))
+
+# Check if using Azure OpenAI
+azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+azure_key = os.getenv("AZURE_OPENAI_API_KEY")
+azure_api_version = os.getenv("AZURE_OPENAI_API_VERSION")
+chat_deployment = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT")
+tts_deployment = os.getenv("AZURE_OPENAI_TTS_DEPLOYMENT")
+
+if azure_endpoint and azure_key:
+    client = OpenAI(
+        api_key=azure_key,
+        base_url=f"{azure_endpoint.rstrip('/')}/openai/v1"
+    )
+    chat_model = chat_deployment or "gpt-4"
+    tts_model = tts_deployment or "tts"
+else:
+    client = OpenAI(api_key=os.getenv("OPENAI_APIKEY"))
+    chat_model = "gpt-4o-mini"
+    tts_model = "tts-1"
 
 
 def extract_first_frame(video_path: str, output_path: str) -> bool:
@@ -54,7 +72,7 @@ Contoh format yang bagus:
 Return HANYA teks hook, tanpa tanda kutip atau penjelasan."""
 
     response = client.chat.completions.create(
-        model="gpt-4o-mini",
+        model=chat_model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.8,
     )
@@ -66,7 +84,7 @@ def generate_tts_audio(text: str, output_path: str) -> bool:
     """Generate TTS audio using OpenAI (female voice)"""
     try:
         response = client.audio.speech.create(
-            model="tts-1",
+            model=tts_model,
             voice="nova",  # Female voice options: nova, shimmer, alloy
             input=text,
             speed=1.0

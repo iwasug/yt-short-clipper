@@ -14,7 +14,22 @@ from dotenv import load_dotenv
 # Load .env from project root
 load_dotenv(Path(__file__).parent.parent / ".env")
 
-client = OpenAI(api_key=os.getenv("OPENAI_APIKEY"))
+# Check if using Azure OpenAI
+azure_endpoint = os.getenv("AZURE_OPENAI_ENDPOINT")
+azure_key = os.getenv("AZURE_OPENAI_API_KEY")
+azure_api_version = os.getenv("AZURE_OPENAI_API_VERSION")
+chat_deployment = os.getenv("AZURE_OPENAI_CHAT_DEPLOYMENT")
+
+if azure_endpoint and azure_key:
+    client = OpenAI(
+        api_key=azure_key,
+        base_url=f"{azure_endpoint.rstrip('/')}/openai/deployments/{chat_deployment}",
+        default_query={"api-version": azure_api_version or "2024-02-15-preview"}
+    )
+    model = chat_deployment or "gpt-4"
+else:
+    client = OpenAI(api_key=os.getenv("OPENAI_APIKEY"))
+    model = "gpt-5.2"
 
 
 def parse_srt(srt_path: str) -> str:
@@ -87,7 +102,7 @@ PENTING:
 - Return HANYA JSON array, tanpa text lain"""
 
     response = client.chat.completions.create(
-        model="gpt-5.2",
+        model=model,
         messages=[{"role": "user", "content": prompt}],
         temperature=0.7,
     )

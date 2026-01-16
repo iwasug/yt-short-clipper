@@ -1,7 +1,7 @@
 # YT-Short-Clipper Dependencies
 # ==============================
 
-# OpenAI API (GPT-4 for highlights, TTS for hooks)
+# OpenAI API (supports both OpenAI and Azure OpenAI)
 openai>=1.0.0
 
 # Environment variables

@@ -13,13 +13,15 @@ Download the portable desktop app — no Python or FFmpeg installation required!
 1. Download `AutoClipper-v1.0.zip` from [Releases](../../releases)
 2. Extract to any folder
 3. Run `AutoClipper.exe`
-4. Enter your OpenAI API key and click "Validate"
-5. Paste YouTube URL, set number of clips, and click "Start Processing"
+4. Enter your OpenAI or Azure OpenAI API key and click "Validate"
+5. For Azure OpenAI, update the "Base URL" to your Azure endpoint
+6. Paste YouTube URL, set number of clips, and click "Start Processing"
 
 ### Desktop App Features
 
 - ✅ **No installation required** — portable single folder
 - ✅ **Simple GUI** — just paste URL and click process
+- ✅ **OpenAI & Azure OpenAI support** — use either API provider
 - ✅ **API key validation** — instant feedback if key is valid
 - ✅ **Real-time progress** — download percentage, processing status
 - ✅ **Token usage tracking** — see GPT tokens, Whisper minutes, TTS chars used
@@ -118,7 +120,14 @@ numpy>=1.24.0
 
 ### API Keys
 
-- **OpenAI API Key** - Required for GPT-4 (highlight detection) and TTS (hook voiceover)
+You can use either OpenAI or Azure OpenAI:
+
+| Provider | API Key | Required Models |
+|----------|----------|----------------|
+| **OpenAI** | `OPENAI_APIKEY` | GPT-4, TTS-1, Whisper-1 |
+| **Azure OpenAI** | `AZURE_OPENAI_API_KEY` + endpoint + deployment names | gpt-4, tts, whisper |
+
+> See [Azure OpenAI Setup](#azure-openai-setup) for detailed Azure configuration.
 
 ## 🚀 Installation
 
@@ -166,6 +175,65 @@ Create a `.env` file in the project root:
 ```env
 OPENAI_APIKEY=your_openai_api_key_here
 ```
+
+## Azure OpenAI Setup
+
+### Option 1: Using Azure OpenAI instead of OpenAI
+
+If you prefer to use Azure OpenAI instead of the OpenAI API, configure the following environment variables in your `.env` file:
+
+```env
+# Azure OpenAI Configuration
+AZURE_OPENAI_API_KEY=your-azure-api-key
+AZURE_OPENAI_ENDPOINT=https://your-resource-name.openai.azure.com
+AZURE_OPENAI_API_VERSION=2024-02-15-preview
+
+# Azure deployment names (must match your Azure OpenAI deployment names)
+AZURE_OPENAI_CHAT_DEPLOYMENT=gpt-4
+AZURE_OPENAI_TTS_DEPLOYMENT=tts
+AZURE_OPENAI_WHISPER_DEPLOYMENT=whisper
+```
+
+### Azure OpenAI Prerequisites
+
+1. **Create Azure OpenAI Resource**
+   - Go to [Azure Portal](https://portal.azure.com)
+   - Create a new "Azure OpenAI" resource
+   - Select your region and pricing tier
+   - Wait for deployment to complete
+
+2. **Deploy Required Models**
+   - In your Azure OpenAI resource, go to "Deployments"
+   - Deploy the following models:
+     - **Chat**: `gpt-4` (or `gpt-4o`, `gpt-4o-mini`)
+     - **Text-to-Speech**: `tts` (Azure OpenAI Speech service)
+     - **Whisper**: `whisper` (for transcription)
+   - Note down the deployment names you assign to each model
+
+3. **Get API Keys and Endpoint**
+   - Go to "Keys and Endpoint" in your Azure OpenAI resource
+   - Copy your API key and endpoint URL
+
+4. **Configure `.env` File**
+   - Use the Azure OpenAI variables instead of `OPENAI_APIKEY`
+   - The application will automatically detect and use Azure OpenAI when configured
+
+### Desktop App with Azure OpenAI
+
+The desktop app supports Azure OpenAI as well:
+
+1. Run `AutoClipper.exe`
+2. In the configuration panel, enter:
+   - **API Key**: Your Azure OpenAI API key
+   - **Base URL**: Your Azure OpenAI endpoint (e.g., `https://your-resource.openai.azure.com/openai/deployments/gpt-4`)
+   - **Model**: Your chat deployment name (e.g., `gpt-4`)
+3. Click "Validate" to test the connection
+
+### Note on TTS and Whisper
+
+For Azure OpenAI:
+- **TTS**: Uses Azure Cognitive Services Speech API. Ensure you have the Speech service deployed.
+- **Whisper**: Use Azure OpenAI Whisper deployment or local Whisper model with `openai-whisper` package.
 
 ## 📖 Usage
 
@@ -381,9 +449,10 @@ Position: Lower third (350px from bottom)
 - Make sure `ffmpeg/ffmpeg.exe` and `yt-dlp.exe` are in the same folder as `AutoClipper.exe`
 
 **2. "API key tidak valid"**
-- Double-check your OpenAI API key
+- Double-check your OpenAI or Azure OpenAI API key
 - Ensure you have API credits available
 - Check internet connection
+- For Azure OpenAI, verify your Base URL format: `https://your-resource.openai.azure.com/openai/deployments/your-deployment-name`
 
 **3. App won't start / crashes**
 - Try running as Administrator
@@ -404,6 +473,7 @@ Position: Lower third (350px from bottom)
 - Check your API key in `.env`
 - Ensure you have sufficient API credits
 - Verify internet connection
+- For Azure OpenAI, verify all required environment variables are set correctly
 
 **4. "Face detection not working"**
 - Ensure OpenCV is properly installed
@@ -424,7 +494,9 @@ Position: Lower third (350px from bottom)
 
 ## 📊 API Usage & Costs
 
-Estimated OpenAI API costs per video (5 clips):
+Estimated API costs per video (5 clips):
+
+### OpenAI
 
 | Feature | Model | Est. Cost |
 |---------|-------|-----------|
@@ -433,6 +505,13 @@ Estimated OpenAI API costs per video (5 clips):
 | Captions | Whisper API | ~$0.01/clip |
 
 **Total estimate:** ~$0.10-0.25 per video (5 clips)
+
+### Azure OpenAI
+
+Pricing varies by Azure region and deployment tier. Check your Azure OpenAI pricing for:
+- GPT-4 deployments (per 1K tokens)
+- Speech Service (TTS) per character
+- Whisper per audio hour
 
 The desktop app shows real-time token usage and cost estimation during processing.
 
@@ -559,6 +638,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [OpenCV](https://opencv.org/) - Computer vision
 - [FFmpeg](https://ffmpeg.org/) - Video processing
 - [OpenAI API](https://openai.com/) - GPT-4 and TTS
+- [Azure OpenAI Service](https://azure.microsoft.com/en-us/products/ai-services/openai-service) - Azure-hosted OpenAI models
 
 ---
 

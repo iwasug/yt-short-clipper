@@ -20,7 +20,8 @@ def download_video_with_subtitle(url: str, output_dir: str = "downloads"):
     # - Download subtitle (auto-generated atau manual)
     # - Convert subtitle ke SRT
     cmd = [
-        "yt-dlp",
+        sys.executable,
+        "-m", "yt_dlp",
         "-f", "bestvideo[height<=1080]+bestaudio/best[height<=1080]",
         "--write-sub",
         "--write-auto-sub",
